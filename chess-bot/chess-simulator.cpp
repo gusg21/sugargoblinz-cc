@@ -33,28 +33,19 @@ std::string ChessSimulator::Move(std::string fen) {
   return moveUcis.front();
 }
 
-float ChessSimulator::MeasureStateJuiciness(std::string fen, chess::Color side)
-{
-  chess::Board board(fen);
-  float juiciness = 1.0f;
+ChessTreeNode *ChessTree::newNode(ChessTreeNode *parent, const chess::Move& move) {
+    ChessTreeNode node;
 
-  if (board.inCheck()) {
-    return 100.f;
-  }
+    chess::Board board;
 
-  if (board.enpassantSq().is_valid()) {
-    return -100.f;
-  }
+    node.setParent(parent);
+    node.setBoard(parent->getBoard());
 
-  if (board.hasNonPawnMaterial(side)) {
-    juiciness += 1.0f;
-  }
-  else {
-    juiciness -= 1.0f;
-  }
 
-  chess::Movelist moves;
-  chess::movegen::legalmoves(moves, board);
 
-  return juiciness;
+
+    return nullptr;
+}
+
+ChessTree::ChessTree() {
 }
