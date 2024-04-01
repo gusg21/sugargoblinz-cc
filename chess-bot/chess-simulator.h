@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include "chess.hpp"
 
 namespace ChessSimulator {
 /**
@@ -9,4 +10,7 @@ namespace ChessSimulator {
  * @return std::string The move as UCI
  */
 std::string Move(std::string fen);
+
+float MeasureStateJuiciness(std::string fen, chess::Color side);
+
 } // namespace ChessSimulator

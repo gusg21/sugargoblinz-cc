@@ -19,9 +19,40 @@ std::string ChessSimulator::Move(std::string fen) {
     return "";
 
   // get random move
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  std::uniform_int_distribution<> dist(0, moves.size() - 1);
-  auto move = moves[dist(gen)];
-  return chess::uci::moveToUci(move);
+  std::vector<std::string> moveUcis;
+  for (int i = 0; i < moves.size(); i++) {
+    std::string uci = chess::uci::moveToUci(moves[i]);
+    std::cout << uci << std::endl;
+    moveUcis.push_back(uci);
+  }
+  auto uciCompare = [](std::string a, std::string b) { return a < b; };
+  std::sort(moveUcis.begin(), moveUcis.end(), uciCompare);
+
+  return moveUcis.front();
+}
+
+float ChessSimulator::MeasureStateJuiciness(std::string fen, chess::Color side)
+{
+  chess::Board board(fen);
+  float juiciness = 1.0f;
+
+  if (board.inCheck()) {
+    return 100.f;
+  }
+
+  if (board.enpassantSq().is_valid()) {
+    return -100.f;
+  }
+
+  if (board.hasNonPawnMaterial(side)) {
+    juiciness += 1.0f;
+  }
+  else {
+    juiciness -= 1.0f;
+  }
+
+  chess::Movelist moves;
+  chess::movegen::legalmoves(moves, board);
+
+  return juiciness;
 }

@@ -8,6 +8,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(FETCHCONTENT_QUIET FALSE)
 include(cmake/get_cpm.cmake)
 
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+
 # set flag to compile only the chessvalidator
 option(CHESS_VALIDATOR_ONLY "Compile only the chess validator" OFF)
 
