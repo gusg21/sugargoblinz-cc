@@ -3,7 +3,12 @@ cmake_minimum_required(VERSION 3.16)
 
 project(chess CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
+
+# set the output directory
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 set(FETCHCONTENT_QUIET FALSE)
 include(cmake/get_cpm.cmake)
@@ -20,26 +25,13 @@ CPMAddPackage("gh:TheLartians/Format.cmake@1.8.1")
 # add external chess lib to use as a validator for the tools
 CPMAddPackage(
         NAME disservin
-        GITHUB_REPOSITORY Disservin/chess-library
+        GITHUB_REPOSITORY InfiniBrains/chess-library
         DOWNLOAD_ONLY YES
         GIT_TAG master
         GIT_SHALLOW TRUE
         GIT_PROGRESS TRUE
 )
 include_directories(${disservin_SOURCE_DIR}/include)
-
-# add json lib
-CPMAddPackage(
-        NAME nlohmann_json
-        VERSION 3.11.3
-        GITHUB_REPOSITORY nlohmann/json
-        DOWNLOAD_ONLY YES
-        OPTIONS
-        "JSON_BuildTests OFF"
-        GIT_PROGRESS TRUE
-        GIT_SHALLOW TRUE
-)
-include_directories(${nlohmann_json_SOURCE_DIR}/single_include)
 
 # add magic_enum lib
 CPMAddPackage(
@@ -57,99 +49,89 @@ CPMAddPackage(
 include_directories(${magic_enum_SOURCE_DIR}/include)
 
 IF(NOT CHESS_VALIDATOR_ONLY)
-# add cpr
-CPMAddPackage(
-        NAME cpr
-        GITHUB_REPOSITORY libcpr/cpr
-        GIT_TAG master
-        GIT_PROGRESS TRUE
-        GIT_SHALLOW TRUE
-)
-include_directories(${cpr_SOURCE_DIR}/include)
 
-# add raylib
-CPMAddPackage(
-        NAME raylib
-        GITHUB_REPOSITORY raysan5/raylib
-        GIT_TAG 5.0
-        GIT_PROGRESS TRUE
-        GIT_SHALLOW TRUE
-)
+    CPMAddPackage(
+            NAME SDL2
+            GITHUB_REPOSITORY libsdl-org/SDL
+            GIT_TAG release-2.26.2
+            OPTIONS "SDL2_DISABLE_INSTALL ON"
+            "SDL_WERROR OFF"
+            "SDL_TEST OFF"
+    )
+    find_package(SDL2 REQUIRED)
+    if(SDL2_ADDED)
+        file(GLOB SDL_HEADERS "${SDL_SOURCE_DIR}/include/*.h")
 
-# add imgui
-CPMAddPackage(
-        NAME IMGUI
-        GITHUB_REPOSITORY ocornut/imgui
-        GIT_TAG docking
-        GIT_PROGRESS TRUE
-        GIT_SHALLOW TRUE
-)
-include_directories(${IMGUI_SOURCE_DIR})
-add_library(IMGUI STATIC)
-target_sources(
-        IMGUI
-        PUBLIC
-        ${IMGUI_SOURCE_DIR}/imgui_demo.cpp
-        ${IMGUI_SOURCE_DIR}/imgui_draw.cpp
-        ${IMGUI_SOURCE_DIR}/imgui_tables.cpp
-        ${IMGUI_SOURCE_DIR}/imgui_widgets.cpp
-        ${IMGUI_SOURCE_DIR}/imgui.cpp
-)
+        # Create a target that copies headers at build time, when they change
+        add_custom_target(
+                sdl_copy_headers_in_build_dir
+                COMMAND ${CMAKE_COMMAND} -E copy_directory "${SDL_SOURCE_DIR}/include"
+                "${CMAKE_BINARY_DIR}/SDLHeaders/SDL2"
+                DEPENDS ${SDL_HEADERS}
+        )
 
-# add rlImGui
-CPMAddPackage(
-        NAME rlImGui
-        GITHUB_REPOSITORY raylib-extras/rlImGui
-        GIT_TAG main
-        GIT_PROGRESS TRUE
-        GIT_SHALLOW TRUE
-)
-file(GLOB rlImGui_SOURCES
-        ${rlImGui_SOURCE_DIR}/*.cpp
-        ${rlImGui_SOURCE_DIR}/*.c
-        ${rlImGui_SOURCE_DIR}/imgui/*.cpp
-)
-include_directories(${rlImGui_SOURCE_DIR})
-add_library (rlImGui STATIC ${rlImGui_SOURCES})
-target_link_libraries(rlImGui PUBLIC raylib IMGUI)
+        # Make SDL depend from it
+        add_dependencies(SDL2 sdl_copy_headers_in_build_dir)
 
-# fontawesome
-CPMAddPackage(
-        NAME fontawesome
-        GITHUB_REPOSITORY juliettef/IconFontCppHeaders
-        DOWNLOAD_ONLY YES
-        GIT_TAG main
-        GIT_PROGRESS TRUE
-        GIT_SHALLOW TRUE
-)
-include_directories(${fontawesome_SOURCE_DIR})
+        # And add the directory where headers have been copied as an interface include dir
+        target_include_directories(SDL2 INTERFACE "${CMAKE_BINARY_DIR}/SDLHeaders")
 
-# add lunasvg
-CPMAddPackage(
-        NAME lunasvg
-        GITHUB_REPOSITORY sammycage/lunasvg
-        GIT_TAG v2.3.9
-        GIT_PROGRESS TRUE
-        GIT_SHALLOW TRUE
-)
-include_directories(${lunasvg_SOURCE_DIR}/include)
+        set(SDL2_INCLUDE_DIR ${SDL2_SOURCE_DIR}/include)
+    endif()
+    include_directories(${SDL2_INCLUDE_DIR})
+
+    CPMAddPackage(GITHUB_REPOSITORY libsdl-org/SDL_image
+            GIT_TAG release-2.6.2
+            OPTIONS
+            "SDL2IMAGE_INSTALL OFF"
+            "SDL2IMAGE_SAMPLES OFF"
+            "SDL2IMAGE_VENDORED ON"
+            "GIT_SUBMODULES_RECURSE ON"
+    )
+    find_package(SDL_image REQUIRED)
+    include_directories(${SDL_image_SOURCE_DIR})
+
+    # add imgui
+    CPMAddPackage(
+            NAME IMGUI
+            URL "https://github.com/ocornut/imgui/archive/refs/tags/v1.89.2.zip"
+    )
+    IF(IMGUI_ADDED)
+        add_library(IMGUI STATIC)
+
+        target_sources( IMGUI
+                PRIVATE
+                ${IMGUI_SOURCE_DIR}/imgui_demo.cpp
+                ${IMGUI_SOURCE_DIR}/imgui_draw.cpp
+                ${IMGUI_SOURCE_DIR}/imgui_tables.cpp
+                ${IMGUI_SOURCE_DIR}/imgui_widgets.cpp
+                ${IMGUI_SOURCE_DIR}/imgui.cpp
+
+                PRIVATE
+                ${IMGUI_SOURCE_DIR}/backends/imgui_impl_sdlrenderer.cpp
+                ${IMGUI_SOURCE_DIR}/backends/imgui_impl_sdl.cpp
+                ${IMGUI_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+        )
+        target_include_directories( IMGUI
+                PUBLIC ${IMGUI_SOURCE_DIR}
+                PUBLIC ${IMGUI_SOURCE_DIR}/backends
+        )
+        find_package(OpenGL REQUIRED)
+        if(EMSCRIPTEN)
+            target_link_libraries(IMGUI PUBLIC ${OPENGL_gl_LIBRARY} SDL2 ${CMAKE_DL_LIBS})
+        else()
+            target_link_libraries(IMGUI PUBLIC ${OPENGL_gl_LIBRARY} SDL2 ${CMAKE_DL_LIBS})
+        endif()
+    ENDIF()
+    include_directories(${IMGUI_SOURCE_DIR} ${IMGUI_SOURCE_DIR}/backends)
 
 endif() # NOT CHESS_VALIDATOR_ONLY
-
-# Memory Tracker
-file(GLOB MEMORY_TRACKER_FILES CONFIGURE_DEPENDS "memory-tracker/*.cpp" "memory-tracker/*.h")
-include_directories(memory-tracker)
-add_library(memorytracker STATIC ${MEMORY_TRACKER_FILES})
 
 # chess library
 file(GLOB_RECURSE CHESS_BOT_FILES CONFIGURE_DEPENDS "chess-bot/*.cpp" "chess-bot/*.h")
 add_library(chessbot STATIC ${CHESS_BOT_FILES})
 set_target_properties(chessbot PROPERTIES LINKER_LANGUAGE CXX)
 include_directories(chess-bot)
-
-# chess validator to be used on the backend
-file(GLOB_RECURSE CHESS_VALIDATOR_FILES CONFIGURE_DEPENDS "chess-validator/*.cpp" "chess-validator/*.h")
-add_executable(chessvalidator ${CHESS_VALIDATOR_FILES})
 
 # chess cli
 file(GLOB_RECURSE CHESS_CLI_FILES CONFIGURE_DEPENDS "chess-cli/*.cpp" "chess-cli/*.h")
@@ -160,5 +142,12 @@ if(NOT CHESS_VALIDATOR_ONLY)
 # chess gui
 file(GLOB_RECURSE CHESS_GUI_FILES CONFIGURE_DEPENDS "chess-gui/*.cpp" "chess-gui/*.h")
 add_executable(chessgui ${CHESS_GUI_FILES})
-target_link_libraries(chessgui PUBLIC raylib rlImGui chessbot IMGUI lunasvg memorytracker)
+target_link_libraries(chessgui PUBLIC chessbot IMGUI SDL2::SDL2 SDL2_image)
 endif() # NOT CHESS_VALIDATOR_ONLY
+
+CPMAddPackage(
+        NAME CPMLicenses.cmake
+        GITHUB_REPOSITORY cpm-cmake/CPMLicenses.cmake
+        VERSION 0.0.5
+)
+write_license_disclaimer("third_party.txt" "${CPM_PACKAGES}")
