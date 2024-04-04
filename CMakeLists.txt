@@ -129,7 +129,10 @@ endif() # NOT CHESS_VALIDATOR_ONLY
 
 # chess library
 file(GLOB_RECURSE CHESS_BOT_FILES CONFIGURE_DEPENDS "chess-bot/*.cpp" "chess-bot/*.h")
-add_library(chessbot STATIC ${CHESS_BOT_FILES})
+add_library(chessbot STATIC ${CHESS_BOT_FILES}
+        chess-bot/chess-tree-node.cpp
+        chess-bot/chess-tree.cpp
+        chess-bot/chess-tree.h)
 set_target_properties(chessbot PROPERTIES LINKER_LANGUAGE CXX)
 include_directories(chess-bot)
 
