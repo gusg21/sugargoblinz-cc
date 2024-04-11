@@ -6,53 +6,69 @@
 #include "chess-tree-node.h"
 
 namespace chess {
-    ChessTreeNode &ChessTree::newNode(ChessTreeNode *parent, const chess::Move &move) {
+    ChessTreeNode* ChessTree::newNode(const ChessTreeNode *parent, const chess::Move &move) {
         // We need to make a new node in the array and then return a pointer to it
         // But the object itself should be managed by this class
-        ChessTreeNode &node = nodes.emplace_back(); // Creates a new object
+        nodes.emplace_back();
+        ChessTreeNode* node = &nodes.back(); // Creates a new object
 
         // Set the proper parent
-        node.setParent(parent);
-        node.setBoard(parent->getBoard());
+        node->setParent(parent);
+        node->setBoard(parent->getBoard());
 
         // Do the move
-        node.applyMove(move);
+        node->applyMove(move);
 
         // Return a reference to the pointer?
         return node;
     }
 
-    [[nodiscard]] ChessTreeNode& ChessTree::selectNode(const ChessTreeNode& node)
+    [[nodiscard]] const ChessTreeNode* ChessTree::selectNode(const ChessTreeNode* node, float uctToBeat)
     {
-        float bestUCT = -100000.f; // We are realists
-        ChessTreeNode pointToBest;
-        for (int i = 0; i < nodes.capacity(); i++)
+        float bestUCT = uctToBeat;
+        const ChessTreeNode* bestChild = nullptr;
+        for (int i = 0; i < node->getChildCount(); i++)
         {
-            ChessTreeNode node = nodes[i];
-            float nodeUct = node.calculateUCT();
-            if (nodeUct > bestUCT)
+            const ChessTreeNode* child = node->getChild(i);
+            float childUct = child->calculateUCT();
+            if (childUct > bestUCT)
             {
-                bestUCT = node.calculateUCT();
-                pointToBest = node;
+                bestUCT = child->calculateUCT();
+                bestChild = child;
             }
         }
-        ChessTreeNode& result = pointToBest;
 
-        //if pointToBest has children
-        if (pointToBest.GetChildrenCount())
+        // Evaluate best child
+        if (bestChild == nullptr) // Can't beat this node
         {
-            result = selectNode(pointToBest);
+            return node;
+        }
+        else
+        {
+            return selectNode(bestChild, bestUCT);
+        }
+    }
+
+    ChessTreeNode* ChessTree::expandNode(const ChessTreeNode* node)
+    {
+        // calculate random move
+        chess::Movelist moves;
+        chess::movegen::legalmoves(moves, node->getBoard());
+
+        if (moves.empty())
+        {
+            std::cout << "bruh" << std::endl;
         }
 
-        return result;
+        int randomNum = std::rand() % moves.size();
+
+        const ChessTreeNode* newChild = newNode(node, moves[randomNum]);
+
+        return newChild; // yooooo co-op coding
     }
 
-    ChessTreeNode &ChessTree::expandNode(const ChessTreeNode &node) {
-        return nullptr;
-    }
-
-    float ChessTree::mcEvalNode(const ChessTreeNode& node) {
-        chess::Board board = node.getBoard();
+    float ChessTree::mcEvalNode(const ChessTreeNode* node) {
+        chess::Board board = node->getBoard();
 
         // Play until end of game
         chess::GameResult result = board.isGameOver().second;
@@ -75,4 +91,14 @@ namespace chess {
         }
     }
 
+    void ChessTree::backpropogate(ChessTreeNode* node, bool wasWin) const
+    {
+        ChessTreeNode* head = node;
+        while (!isRoot(head))
+        {
+            head->incrementVisits();
+            if (wasWin) head->incrementWins();
+            head = head->getParent();
+        }
+    }
 }

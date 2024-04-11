@@ -10,9 +10,18 @@ std::string ChessSimulator::Move(const std::string& fen) {
     // Create a board state from this FEN
     chess::Board board(fen);
 
-    chess::ChessTreeNode& bestNode = g_ChessTree.selectNode();
-    chess::ChessTreeNode& newNode = g_ChessTree.expandNode(bestNode);
+    chess::ChessTreeNode* bestNode = g_ChessTree.selectNode(g_ChessTree.getRoot());
+    chess::ChessTreeNode* newNode = g_ChessTree.expandNode(bestNode);
     float mcEval = g_ChessTree.mcEvalNode(newNode);
+    if (mcEval == 1)
+    {
+        g_ChessTree.backpropogate(newNode, true);
+    }
+    else
+    {
+        g_ChessTree.backpropogate(newNode, false);
+    }
+
 
 //  chess::Movelist moves;
 //  chess::movegen::legalmoves(moves, board);

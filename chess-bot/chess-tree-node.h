@@ -19,7 +19,7 @@ namespace chess {
         std::vector<ChessTreeNode *> children;
         ChessTreeNode *parent = nullptr;
 
-        int value; // Needed?
+        int wins; // Needed?
         int visits;
 
     public:
@@ -34,13 +34,13 @@ namespace chess {
          * Get the value for this node
          * @return the value
          */
-        [[nodiscard]] int getValue() const { return value; }
+        [[nodiscard]] int getWins() const { return wins; }
 
         /**
          * Get the number of times this node has been visited
          * @return the number of times visited
          */
-        [[nodiscard]] int getVisitCount() const { return visits; }
+        [[nodiscard]] int getVisits() const { return visits; }
 
         /**
          * Get the parent node
@@ -49,10 +49,17 @@ namespace chess {
         [[nodiscard]] ChessTreeNode *getParent() const { return parent; }
 
         /**
-         * Get the number of children in this node
-         * @return the value
+         * Get the number of children
+         * @return the child count
          */
-        [[nodiscard]] int GetChildrenCount() { return children.capacity(); }
+        [[nodiscard]] uint32_t getChildCount() const { return children.size(); }
+
+        /**
+         * Get a child at an index
+         * @param index the index
+         * @return the child
+         */
+        [[nodiscard]] const ChessTreeNode* getChild(uint32_t index) const { return children[index]; }
 
         /******** SETTERS *********/
         /**
@@ -72,7 +79,23 @@ namespace chess {
          * Calculate the UCT for a given state.
          * @return the uct
          */
-        [[nodiscard]] float calculateUCT() const { return 0.f; }
+        [[nodiscard]] float calculateUCT() const {
+            float ourVisits = static_cast<float>(getVisits());
+            float winRatio = static_cast<float>(getWins()) / ourVisits;
+            float parentVisits = static_cast<float>(getParent()->getVisits());
+            float krabbyPattyFormula = sqrtf(2.f);
+            return winRatio + krabbyPattyFormula * (logf(parentVisits) / ourVisits);
+        }
+
+        /**
+         * Add one to the visit counter
+         */
+        void incrementVisits() { visits++; }
+
+        /**
+         * Add one to the win counter
+         */
+        void incrementWins() { wins++; }
 
         /**
          * Apply a move to this node's board state
