@@ -91,7 +91,7 @@ namespace chess {
         }
     }
 
-    void ChessTree::backpropogate(ChessTreeNode* node, bool wasWin) const
+    void ChessTree::backpropagation(ChessTreeNode* node, bool wasWin) const
     {
         ChessTreeNode* head = node;
         while (!isRoot(head))

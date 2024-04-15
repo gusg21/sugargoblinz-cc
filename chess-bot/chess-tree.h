@@ -59,7 +59,7 @@ namespace chess {
          * @param node
          * @param uct
          */
-        void backpropogate(ChessTreeNode* node, bool wasWin) const;
+        void backpropagation(ChessTreeNode* node, bool wasWin) const;
     };
 };
 

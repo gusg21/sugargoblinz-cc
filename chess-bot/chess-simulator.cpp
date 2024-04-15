@@ -15,11 +15,11 @@ std::string ChessSimulator::Move(const std::string& fen) {
     float mcEval = g_ChessTree.mcEvalNode(newNode);
     if (mcEval == 1)
     {
-        g_ChessTree.backpropogate(newNode, true);
+        g_ChessTree.backpropagation(newNode, true);
     }
     else
     {
-        g_ChessTree.backpropogate(newNode, false);
+        g_ChessTree.backpropagation(newNode, false);
     }
 
 
