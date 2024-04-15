@@ -23,7 +23,10 @@ namespace chess {
          * @param move the move to make
          * @return a reference to the newly create node (managed by the tree)
          */
-        [[nodiscard]] const ChessTreeNode* newNode(const ChessTreeNode* parent, const chess::Move& move);
+        [[nodiscard]] ChessTreeNode* newNode(ChessTreeNode* parent, const chess::Move& move);
+
+        ChessTreeNode* createRoot(Board board);
+
 
         /**
          * Is a given node the root node?
@@ -32,20 +35,20 @@ namespace chess {
          */
         [[nodiscard]] bool isRoot(const ChessTreeNode* node) const { return node == root; }
 
-        const ChessTreeNode* getRoot() { return root; };
+        ChessTreeNode* getRoot() { return root; };
 
         /**
          * Do MCTS selection on this tree
          * @return a reference to the selected node
          */
-        [[nodiscard]] const ChessTreeNode* selectNode(const ChessTreeNode* node, float uctToBeat = -1000000.f);
+        [[nodiscard]] ChessTreeNode* selectNode(ChessTreeNode* node, float uctToBeat = -1000000.f);
 
         /**
          * Expand a given node
          * @param node the node to expand from
          * @return a reference to the new node
          */
-        [[nodiscard]] const ChessTreeNode* expandNode(const ChessTreeNode* node);
+        [[nodiscard]] ChessTreeNode* expandNode(ChessTreeNode* node);
 
         /**
          * Run a game to an end condition, return the result

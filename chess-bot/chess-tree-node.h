@@ -59,7 +59,7 @@ namespace chess {
          * @param index the index
          * @return the child
          */
-        [[nodiscard]] const ChessTreeNode* getChild(uint32_t index) const { return children[index]; }
+        [[nodiscard]] ChessTreeNode* getChild(uint32_t index) const { return children[index]; }
 
         /******** SETTERS *********/
         /**

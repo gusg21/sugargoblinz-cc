@@ -6,7 +6,7 @@
 #include "chess-tree-node.h"
 
 namespace chess {
-    ChessTreeNode* ChessTree::newNode(const ChessTreeNode *parent, const chess::Move &move) {
+    ChessTreeNode* ChessTree::newNode(ChessTreeNode *parent, const chess::Move &move) {
         // We need to make a new node in the array and then return a pointer to it
         // But the object itself should be managed by this class
         nodes.emplace_back();
@@ -19,17 +19,30 @@ namespace chess {
         // Do the move
         node->applyMove(move);
 
+        if (parent == nullptr) {
+            root = node;
+        }
+
         // Return a reference to the pointer?
         return node;
     }
 
-    [[nodiscard]] const ChessTreeNode* ChessTree::selectNode(const ChessTreeNode* node, float uctToBeat)
+    ChessTreeNode* ChessTree::createRoot(Board board)
+    {
+        nodes.emplace_back();
+        ChessTreeNode* node = &nodes.back();
+        node->setParent(nullptr);
+        node->setBoard(board);
+        root = node;
+    }
+
+    [[nodiscard]] ChessTreeNode* ChessTree::selectNode(ChessTreeNode* node, float uctToBeat)
     {
         float bestUCT = uctToBeat;
-        const ChessTreeNode* bestChild = nullptr;
+        ChessTreeNode* bestChild = nullptr;
         for (int i = 0; i < node->getChildCount(); i++)
         {
-            const ChessTreeNode* child = node->getChild(i);
+            ChessTreeNode* child = node->getChild(i);
             float childUct = child->calculateUCT();
             if (childUct > bestUCT)
             {
@@ -49,7 +62,7 @@ namespace chess {
         }
     }
 
-    ChessTreeNode* ChessTree::expandNode(const ChessTreeNode* node)
+    ChessTreeNode* ChessTree::expandNode(ChessTreeNode* node)
     {
         // calculate random move
         chess::Movelist moves;
@@ -62,7 +75,7 @@ namespace chess {
 
         int randomNum = std::rand() % moves.size();
 
-        const ChessTreeNode* newChild = newNode(node, moves[randomNum]);
+        ChessTreeNode* newChild = newNode(node, moves[randomNum]);
 
         return newChild; // yooooo co-op coding
     }
