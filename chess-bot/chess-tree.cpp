@@ -9,10 +9,10 @@ namespace chess {
     ChessTreeNode* ChessTree::newNode(ChessTreeNode *parent, const chess::Move &move) {
         // We need to make a new node in the array and then return a pointer to it
         // But the object itself should be managed by this class
-        nodes.emplace_back();
-        ChessTreeNode* node = &nodes.back(); // Creates a new object
+        ChessTreeNode* node = &nodes[nextNodeIndex++];
 
         // Set the proper parent
+        node->setValid(true);
         node->setParent(parent);
         node->setBoard(parent->getBoard());
 
@@ -29,8 +29,9 @@ namespace chess {
 
     ChessTreeNode* ChessTree::createRoot(Board board)
     {
-        nodes.emplace_back();
-        ChessTreeNode* node = &nodes.back();
+        ChessTreeNode* node = &nodes[nextNodeIndex++];
+
+        node->setValid(true);
         node->setParent(nullptr);
         node->setBoard(board);
         root = node;

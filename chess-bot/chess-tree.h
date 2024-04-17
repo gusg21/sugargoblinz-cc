@@ -7,10 +7,13 @@
 
 #include "chess-tree-node.h"
 
+#define MAX_TREE_NODES 4096
+
 namespace chess {
     class ChessTree {
     private:
-        std::vector<ChessTreeNode> nodes;
+        std::array<ChessTreeNode, MAX_TREE_NODES> nodes;
+        uint32_t nextNodeIndex = 0;
         ChessTreeNode* root = nullptr;
 
     public:

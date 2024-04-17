@@ -19,16 +19,23 @@ namespace chess {
         std::vector<ChessTreeNode *> children;
         ChessTreeNode *parent = nullptr;
 
+        bool valid = false;
         int wins; // Needed?
         int visits;
 
     public:
+        ChessTreeNode() : board(), children(), parent(nullptr), wins(0), visits(0), valid(false) {}
+
         /******** GETTERS *********/
         /**
          * Get the board for this node
          * @return the chess board
          */
         [[nodiscard]] chess::Board getBoard() const { return board; }
+
+        void setValid(bool _valid) { valid = _valid; }
+
+        [[nodiscard]] bool isValid() const { return valid; }
 
         /**
          * Get the value for this node
