@@ -165,6 +165,8 @@ int main(int argc, char *argv[]) {
   auto piecesTextures = loadPiecesTextures(renderer);
 
   chess::Board board;
+  char* boardFenInput = new char[512];
+  memset(boardFenInput, 0, 512);
 
   SDL_RendererInfo info;
   SDL_GetRendererInfo(renderer, &info);
@@ -235,6 +237,15 @@ int main(int argc, char *argv[]) {
       simulationState = SimulationState::PAUSED;
       move(board);
     }
+    ImGui::Separator();
+
+    if (ImGui::Button("Set Board FEN"))
+    {
+        board.setFen(boardFenInput);
+    }
+    ImGui::SameLine();
+    ImGui::InputText("FEN:", boardFenInput, 512);
+
     ImGui::Separator();
     // statistics
     ImGui::Text("Acc Time spent: %.3fms", timeSpentOnMoves.count() / 1000000.0);

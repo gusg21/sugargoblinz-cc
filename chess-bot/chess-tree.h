@@ -7,7 +7,9 @@
 
 #include "chess-tree-node.h"
 
-#define MAX_TREE_NODES 4096
+#include <cmath>
+
+#define MAX_TREE_NODES (65536)
 
 namespace chess {
     class ChessTree {
@@ -65,7 +67,19 @@ namespace chess {
          * @param node
          * @param uct
          */
-        void backpropagation(ChessTreeNode* node, bool wasWin) const;
+        void backpropagation(ChessTreeNode* node, float eval) const;
+
+        /**
+         * Get the best move under the root
+         * @return best move UCI
+         */
+        [[nodiscard]] std::string getBestMove() const;
+
+        static bool hasMoves(ChessTreeNode *node);
+
+        float getHeuristicValue(const Board &board) const;
+
+        void debugPrint() const;
     };
 };
 

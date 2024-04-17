@@ -8,5 +8,17 @@ namespace chess {
     void ChessTreeNode::applyMove(const chess::Move &move) {
         // Apply the move
         board.makeMove(move);
+        moveUCI = chess::uci::moveToUci(move);
+    }
+
+    void ChessTreeNode::addChild(ChessTreeNode *node) {
+        children.push_back(node);
+    }
+
+    void ChessTreeNode::debugPrint(int depth) {
+        printf("%sNode (uct %f) (move %s)\n", std::string(depth, ' ').c_str(), calculateUCT(), moveUCI.c_str());
+        for (auto child : children) {
+            if (depth < 5) child->debugPrint(depth + 1);
+        }
     }
 }

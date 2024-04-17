@@ -15,16 +15,17 @@ namespace chess {
     class ChessTreeNode {
     private:
         chess::Board board;
+        std::string moveUCI;
 
         std::vector<ChessTreeNode *> children;
         ChessTreeNode *parent = nullptr;
 
         bool valid = false;
-        int wins; // Needed?
+        float value;
         int visits;
 
     public:
-        ChessTreeNode() : board(), children(), parent(nullptr), wins(0), visits(0), valid(false) {}
+        ChessTreeNode() : board(), children(), parent(nullptr), value(0), visits(0), valid(false) {}
 
         /******** GETTERS *********/
         /**
@@ -41,7 +42,7 @@ namespace chess {
          * Get the value for this node
          * @return the value
          */
-        [[nodiscard]] int getWins() const { return wins; }
+        [[nodiscard]] float getValue() const { return value; }
 
         /**
          * Get the number of times this node has been visited
@@ -68,6 +69,9 @@ namespace chess {
          */
         [[nodiscard]] ChessTreeNode* getChild(uint32_t index) const { return children[index]; }
 
+        [[nodiscard]] std::string getMoveUCI() const { return moveUCI; }
+
+
         /******** SETTERS *********/
         /**
          * Set the parent node
@@ -81,6 +85,8 @@ namespace chess {
          */
         void setBoard(chess::Board _board) { this->board = std::move(_board); }
 
+        void addValue(float _value) { this->value += _value; }
+
         /******** METHODS *********/
         /**
          * Calculate the UCT for a given state.
@@ -88,10 +94,12 @@ namespace chess {
          */
         [[nodiscard]] float calculateUCT() const {
             float ourVisits = static_cast<float>(getVisits());
-            float winRatio = static_cast<float>(getWins()) / ourVisits;
-            float parentVisits = static_cast<float>(getParent()->getVisits());
+            float valueRatio = static_cast<float>(getValue()) / ourVisits;
+            float parentVisits = 0;
+            if (getParent() != nullptr)
+                parentVisits = static_cast<float>(getParent()->getVisits());
             float krabbyPattyFormula = sqrtf(2.f);
-            return winRatio + krabbyPattyFormula * (logf(parentVisits) / ourVisits);
+            return valueRatio + krabbyPattyFormula * (logf(parentVisits) / ourVisits);
         }
 
         /**
@@ -100,16 +108,14 @@ namespace chess {
         void incrementVisits() { visits++; }
 
         /**
-         * Add one to the win counter
+         * Apply a moveUCI to this node's board state
+         * @param moveUCI the moveUCI to apply
          */
-        void incrementWins() { wins++; }
+        void applyMove(const chess::Move &moveUCI);
 
-        /**
-         * Apply a move to this node's board state
-         * @param move the move to apply
-         */
-        void applyMove(const chess::Move &move);
+        void addChild(ChessTreeNode *pNode);
 
+        void debugPrint(int depth = 0);
     };
 }
 

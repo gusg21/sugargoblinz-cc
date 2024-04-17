@@ -1,6 +1,4 @@
 #include "chess-simulator.h"
-// disservin's lib. drop a star on his hard work!
-// https://github.com/Disservin/chess-library
 #include "chess.hpp"
 #include <random>
 
@@ -8,30 +6,28 @@ using namespace ChessSimulator;
 
 std::string ChessSimulator::Move(const std::string& fen) {
     // Create a board state from this FEN
+    printf("[[ New Move ]]\n");
     chess::Board board(fen);
+    std::srand(std::time(nullptr));
 
-    if (g_ChessTree == nullptr) {
-        g_ChessTree = new chess::ChessTree();
-    }
-    if (g_ChessTree->getRoot() == nullptr) { g_ChessTree->createRoot(board); }
-    else {
-        printf("Wow!");
-    }
+    g_ChessTree = new chess::ChessTree();
+    g_ChessTree->createRoot(board);
 
     // TODO: do number of iterations
-    for (uint32_t i = 0; i < 100; i++) {
+    for (uint32_t i = 0; i < 1000; i++) {
         chess::ChessTreeNode* bestNode = g_ChessTree->selectNode(g_ChessTree->getRoot());
         chess::ChessTreeNode* newNode = g_ChessTree->expandNode(bestNode);
         float mcEval = g_ChessTree->mcEvalNode(newNode);
-        if (mcEval == 1)
-        {
-            g_ChessTree->backpropagation(newNode, true);
-        }
-        else
-        {
-            g_ChessTree->backpropagation(newNode, false);
-        }
+        g_ChessTree->backpropagation(newNode, mcEval);
     }
+    g_ChessTree->debugPrint();
+
+    std::string bestMoveUCI = g_ChessTree->getBestMove();
+
+    delete g_ChessTree;
+
+    printf("Best Move: %s\n", bestMoveUCI.c_str());
+    return bestMoveUCI;
 
 
 //  chess::Movelist moves;
