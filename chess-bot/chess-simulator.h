@@ -8,8 +8,6 @@
 #include "chess-tree.h"
 
 namespace ChessSimulator {
-    static chess::ChessTree* g_ChessTree = nullptr;
-
     /**
      * @brief Move a piece on the board
      *

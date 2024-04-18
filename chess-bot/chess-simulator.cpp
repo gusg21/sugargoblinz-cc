@@ -6,11 +6,13 @@ using namespace ChessSimulator;
 
 std::string ChessSimulator::Move(const std::string& fen) {
     // Create a board state from this FEN
+#ifdef INCLUDE_PRINTS
     printf("[[ New Move ]]\n");
+#endif
     chess::Board board(fen);
-    std::srand(std::time(nullptr));
+    std::srand(time(nullptr));
 
-    g_ChessTree = new chess::ChessTree();
+    chess::ChessTree* g_ChessTree = new chess::ChessTree();
     g_ChessTree->createRoot(board);
 
     // TODO: do number of iterations
@@ -26,24 +28,8 @@ std::string ChessSimulator::Move(const std::string& fen) {
 
     delete g_ChessTree;
 
+#ifdef INCLUDE_PRINTS
     printf("Best Move: %s\n", bestMoveUCI.c_str());
+#endif
     return bestMoveUCI;
-
-
-//  chess::Movelist moves;
-//  chess::movegen::legalmoves(moves, board);
-//  if(moves.size() == 0)
-//    return "";
-//
-//  // get random move
-//  std::vector<std::string> moveUcis;
-//  for (int i = 0; i < moves.size(); i++) {
-//    std::string uci = chess::uci::moveToUci(moves[i]);
-//    std::cout << uci << std::endl;
-//    moveUcis.push_back(uci);
-//  }
-//  auto uciCompare = [](const std::string& a, const std::string& b) { return a < b; };
-//  std::sort(moveUcis.begin(), moveUcis.end(), uciCompare);
-//
-//  return moveUcis.front();
 }

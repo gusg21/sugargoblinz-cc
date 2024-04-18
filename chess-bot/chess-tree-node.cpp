@@ -16,9 +16,11 @@ namespace chess {
     }
 
     void ChessTreeNode::debugPrint(int depth) {
-        printf("%sNode (uct %f) (move %s)\n", std::string(depth, ' ').c_str(), calculateUCT(), moveUCI.c_str());
+#ifdef INCLUDE_PRINTS
+        printf("%sNode (uct %f) (move %s) (visits %d) (value %f)\n", std::string(depth, ' ').c_str(), calculateUCT(), moveUCI.c_str(), visits, value);
+#endif
         for (auto child : children) {
-            if (depth < 5) child->debugPrint(depth + 1);
+            if (depth < 1) child->debugPrint(depth + 1);
         }
     }
 }

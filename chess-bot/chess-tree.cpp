@@ -80,14 +80,30 @@ namespace chess {
         chess::movegen::legalmoves(moves, node->getBoard());
 
         if (moves.empty()) {
+#ifdef INCLUDE_PRINTS
             printf("ERROR: Bruh\n");
+#endif
         }
 
-        int randomNum = std::rand() % moves.size();
+        chess::Move bestMove{};
+        float bestVal = -1.0f;
+        for (uint32_t i = 0; i < moves.size(); i++) {
+            chess::Board newBoard = node->getBoard();
+            newBoard.makeMove(moves[(int) i]);
+            float thisVal = getHeuristicValue(newBoard);
+            if (thisVal > bestVal) {
+                bestVal = thisVal;
+                bestMove = moves[(int) i];
 
-        ChessTreeNode *newChild = newNode(node, moves[randomNum]);
+                if (thisVal == 1.0f) {
+                    break;
+                }
+            }
+        }
 
-        return newChild; // yooooo co-op coding
+        ChessTreeNode *newChild = newNode(node, bestMove);
+
+        return newChild;
     }
 
     float ChessTree::getHeuristicValue(const chess::Board &board) const {
@@ -95,27 +111,28 @@ namespace chess {
         chess::Color themColor = ~board.sideToMove();
 
         float ourMaterial =
-                (board.pieces(PieceType::PAWN, usColor).count() * 1.f) +
-                (board.pieces(PieceType::KNIGHT, usColor).count() * 3.f) +
-                (board.pieces(PieceType::BISHOP, usColor).count() * 3.f) +
-                (board.pieces(PieceType::ROOK, usColor).count() * 5.f) +
-                (board.pieces(PieceType::QUEEN, usColor).count() * 9.f);
+                ((float)board.pieces(PieceType::PAWN, usColor).count() * 1.f) +
+                ((float)board.pieces(PieceType::KNIGHT, usColor).count() * 3.f) +
+                ((float)board.pieces(PieceType::BISHOP, usColor).count() * 3.f) +
+                ((float)board.pieces(PieceType::ROOK, usColor).count() * 5.f) +
+                ((float)board.pieces(PieceType::QUEEN, usColor).count() * 9.f);
         float theirMaterial =
-                (board.pieces(PieceType::PAWN, themColor).count() * 1.f) +
-                (board.pieces(PieceType::KNIGHT, themColor).count() * 3.f) +
-                (board.pieces(PieceType::BISHOP, themColor).count() * 3.f) +
-                (board.pieces(PieceType::ROOK, themColor).count() * 5.f) +
-                (board.pieces(PieceType::QUEEN, themColor).count() * 9.f);
+                ((float)board.pieces(PieceType::PAWN, themColor).count() * 1.f) +
+                ((float)board.pieces(PieceType::KNIGHT, themColor).count() * 3.f) +
+                ((float)board.pieces(PieceType::BISHOP, themColor).count() * 3.f) +
+                ((float)board.pieces(PieceType::ROOK, themColor).count() * 5.f) +
+                ((float)board.pieces(PieceType::QUEEN, themColor).count() * 9.f);
 
-        return (ourMaterial / 50.f) - (theirMaterial / 50.f);
+        return (ourMaterial / 50.f) + 0.1f - (theirMaterial / 50.f);
     }
 
     float ChessTree::mcEvalNode(const ChessTreeNode *node) {
         chess::Board board = node->getBoard();
 
         // Play until end of game
+        chess::GameResultReason reason = board.isGameOver().first;
         chess::GameResult result = board.isGameOver().second;
-        uint32_t depth = 50;
+        uint32_t depth = 3;
         while (result == GameResult::NONE && depth > 0) {
             chess::Movelist moves;
             chess::movegen::legalmoves(moves, board);
@@ -148,8 +165,13 @@ namespace chess {
             case GameResult::LOSE:
                 return -1;
             case GameResult::DRAW:
+                //printf("%d", reason);
                 return 0;
+            case GameResult::NONE:
             default:
+#ifdef INCLUDE_PRINTS
+    printf("%d", reason);
+#endif
                 return getHeuristicValue(board);
         }
     }
@@ -181,6 +203,8 @@ namespace chess {
 
     void ChessTree::debugPrint() const
     {
+#ifdef INCLUDE_PRINTS
         root->debugPrint(0);
+#endif
     }
 }
