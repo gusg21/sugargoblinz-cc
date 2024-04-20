@@ -167,6 +167,7 @@ int main(int argc, char *argv[]) {
   chess::Board board;
   char* boardFenInput = new char[512];
   memset(boardFenInput, 0, 512);
+  float eval = INFINITY;
 
   SDL_RendererInfo info;
   SDL_GetRendererInfo(renderer, &info);
@@ -245,6 +246,15 @@ int main(int argc, char *argv[]) {
     }
     ImGui::SameLine();
     ImGui::InputText("FEN:", boardFenInput, 512);
+
+    ImGui::Text("Eval: %.2f", eval); 
+    if (ImGui::Button("Calc Eval")) {
+        std::string fen;
+        auto pair = ChessSimulator::GetEval(board.getFen());
+        eval = pair.first;
+        fen = pair.second;
+        board.setFen(fen);
+    }
 
     ImGui::Separator();
     // statistics

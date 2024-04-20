@@ -1,4 +1,5 @@
 #include "chess-simulator.h"
+#include "chess-simulator.h"
 #include "chess.hpp"
 #include <random>
 
@@ -17,12 +18,15 @@ std::string ChessSimulator::Move(const std::string& fen) {
 
     // TODO: do number of iterations
     for (uint32_t i = 0; i < 1000; i++) {
-        chess::ChessTreeNode* bestNode = g_ChessTree->selectNode(g_ChessTree->getRoot());
-        chess::ChessTreeNode* newNode = g_ChessTree->expandNode(bestNode);
-        float mcEval = g_ChessTree->mcEvalNode(newNode);
-        g_ChessTree->backpropagation(newNode, mcEval);
+        chess::ChessTreeNode* selected = g_ChessTree->selectNode(g_ChessTree->getRoot());
+        if (g_ChessTree->hasMoves(selected)) {
+            chess::ChessTreeNode* newNode = g_ChessTree->expandNode(selected);
+            float mcEval = g_ChessTree->mcEvalNode(newNode);
+            g_ChessTree->backpropagation(newNode, mcEval);
+        }
+        g_ChessTree->debugPrint();
     }
-    g_ChessTree->debugPrint();
+    
 
     std::string bestMoveUCI = g_ChessTree->getBestMove();
 
@@ -32,4 +36,19 @@ std::string ChessSimulator::Move(const std::string& fen) {
     printf("Best Move: %s\n", bestMoveUCI.c_str());
 #endif
     return bestMoveUCI;
+}
+
+std::pair<float, std::string> ChessSimulator::GetEval(const std::string& _fen)
+{
+    chess::Board board(_fen);
+
+    chess::ChessTree* g_ChessTree = new chess::ChessTree();
+    g_ChessTree->createRoot(board);
+
+    std::string fen {};
+    float eval = g_ChessTree->mcEvalNode(g_ChessTree->getRoot(), fen);
+
+    return {
+        eval, fen
+    };
 }

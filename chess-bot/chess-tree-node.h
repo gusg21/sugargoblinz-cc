@@ -98,8 +98,8 @@ namespace chess {
             float parentVisits = 0;
             if (getParent() != nullptr)
                 parentVisits = static_cast<float>(getParent()->getVisits());
-            float krabbyPattyFormula = sqrtf(2.0f);
-            return valueRatio;// + krabbyPattyFormula * (logf(parentVisits) / ourVisits);
+            float krabbyPattyFormula = sqrtf(2.0f) / 3.0f;
+            return valueRatio + krabbyPattyFormula * (logf(parentVisits) / ourVisits);
         }
 
         /**

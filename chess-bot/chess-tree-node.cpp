@@ -20,7 +20,7 @@ namespace chess {
         printf("%sNode (uct %f) (move %s) (visits %d) (value %f)\n", std::string(depth, ' ').c_str(), calculateUCT(), moveUCI.c_str(), visits, value);
 #endif
         for (auto child : children) {
-            if (depth < 1) child->debugPrint(depth + 1);
+            if (depth < 4) child->debugPrint(depth + 1);
         }
     }
 }

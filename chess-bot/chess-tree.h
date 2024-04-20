@@ -8,6 +8,8 @@
 #include "chess-tree-node.h"
 
 #include <cmath>
+#include <string>
+#include <array>
 
 #define MAX_TREE_NODES (65536)
 
@@ -46,7 +48,7 @@ namespace chess {
          * Do MCTS selection on this tree
          * @return a reference to the selected node
          */
-        [[nodiscard]] ChessTreeNode* selectNode(ChessTreeNode* node, float uctToBeat = -1000000.f);
+        [[nodiscard]] ChessTreeNode* selectNode(ChessTreeNode* node);
 
         /**
          * Expand a given node
@@ -60,7 +62,13 @@ namespace chess {
          * @param node the node to run from
          * @return the outcome
          */
-        [[nodiscard]] float mcEvalNode(const ChessTreeNode* node);
+        [[nodiscard]] float mcEvalNode(const ChessTreeNode* node, std::string& outFen);
+
+        [[nodiscard]] float mcEvalNode(const ChessTreeNode* node)
+        {
+            std::string a {};
+            return mcEvalNode(node, a);
+        }
 
         /**
          * Updates the win count of every node

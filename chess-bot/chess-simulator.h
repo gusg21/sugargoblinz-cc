@@ -16,4 +16,6 @@ namespace ChessSimulator {
      */
     std::string Move(const std::string& fen);
 
+    std::pair<float, std::string> GetEval(const std::string& fen);
+
 } // namespace ChessSimulator

@@ -6,205 +6,203 @@
 #include "chess-tree-node.h"
 
 namespace chess {
-    ChessTreeNode *ChessTree::newNode(ChessTreeNode *parent, const chess::Move &move) {
-        // We need to make a new node in the array and then return a pointer to it
-        // But the object itself should be managed by this class
-        ChessTreeNode *node = &nodes[nextNodeIndex++];
-
-        // Set the proper parent
-        node->setValid(true);
-        node->setParent(parent);
-        node->setBoard(parent->getBoard());
-
-        // Do the move
-        node->applyMove(move);
-
-        if (parent == nullptr) {
-            root = node;
-        } else {
-            parent->addChild(node);
-        }
-
-        // Return a reference to the pointer?
-        return node;
-    }
-
-    ChessTreeNode *ChessTree::createRoot(Board board) {
-        ChessTreeNode *node = &nodes[nextNodeIndex++];
-
-        node->setValid(true);
-        node->setParent(nullptr);
-        node->setBoard(board);
-        root = node;
-
-        return node;
-    }
-
-    [[nodiscard]] ChessTreeNode *ChessTree::selectNode(ChessTreeNode *node, float uctToBeat) {
-        float bestUCT = uctToBeat;
-        ChessTreeNode *bestChild = nullptr;
-        for (int i = 0; i < node->getChildCount(); i++) {
-            ChessTreeNode *child = node->getChild(i);
-
-            if (!hasMoves(child)) {
-                continue;
-            }
-
-            float childUct = child->calculateUCT();
-            if (childUct > bestUCT) {
-                bestUCT = child->calculateUCT();
-                bestChild = child;
-            }
-        }
-
-        // Evaluate best child
-        if (bestChild == nullptr) // Can't beat this node
-        {
+ChessTreeNode* ChessTree::newNode(ChessTreeNode* parent, const chess::Move& move)
+{
+    // Find a node if it already exists
+    std::string moveUCI = chess::uci::moveToUci(move);
+    for (uint32_t i = 0; i < parent->getChildCount(); i++) {
+        ChessTreeNode* node = parent->getChild(i);
+        if (node->getMoveUCI() == moveUCI) {
             return node;
-        } else {
-            return selectNode(bestChild, bestUCT);
         }
     }
 
-    bool ChessTree::hasMoves(ChessTreeNode *node) {
-        // calculate random move
-        chess::Movelist moves;
-        chess::movegen::legalmoves(moves, node->getBoard());
+    // We need to make a new node in the array and then return a pointer to it
+    // But the object itself should be managed by this class
+    ChessTreeNode* node = &nodes[nextNodeIndex++];
 
-        return moves.size() > 0;
+    // Set the proper parent
+    node->setValid(true);
+    node->setParent(parent);
+    node->setBoard(parent->getBoard());
+
+    // Do the move
+    node->applyMove(move);
+
+    if (parent == nullptr) {
+        root = node;
+    } else {
+        parent->addChild(node);
     }
 
-    ChessTreeNode *ChessTree::expandNode(ChessTreeNode *node) {
-        // calculate random move
-        chess::Movelist moves;
-        chess::movegen::legalmoves(moves, node->getBoard());
+    // Return a reference to the pointer?
+    return node;
+}
 
-        if (moves.empty()) {
-#ifdef INCLUDE_PRINTS
-            printf("ERROR: Bruh\n");
-#endif
-        }
+ChessTreeNode* ChessTree::createRoot(Board board)
+{
+    ChessTreeNode* node = &nodes[nextNodeIndex++];
 
-        chess::Move bestMove{};
-        float bestVal = -1.0f;
-        for (uint32_t i = 0; i < moves.size(); i++) {
-            chess::Board newBoard = node->getBoard();
-            newBoard.makeMove(moves[(int) i]);
-            float thisVal = getHeuristicValue(newBoard);
-            if (thisVal > bestVal) {
-                bestVal = thisVal;
-                bestMove = moves[(int) i];
+    node->setValid(true);
+    node->setParent(nullptr);
+    node->setBoard(board);
+    root = node;
 
-                if (thisVal == 1.0f) {
-                    break;
+    return node;
+}
+
+[[nodiscard]] ChessTreeNode* ChessTree::selectNode(ChessTreeNode* node)
+{
+    ChessTreeNode* head = getRoot();
+    if (node == nullptr)
+        return node;
+
+    float bestUCT = node->calculateUCT();
+    ChessTreeNode* bestNode = node;
+    for (uint32_t i = 0; i < MAX_TREE_NODES; i++) {
+        if (nodes[i].isValid()) {
+            float uct = nodes[i].calculateUCT();
+            if (nodes[i].getBoard().sideToMove() == chess::Color::WHITE)
+            {
+                if (uct > bestUCT) {
+                    bestUCT = uct;
+                    bestNode = &nodes[i];
                 }
             }
-        }
-
-        ChessTreeNode *newChild = newNode(node, bestMove);
-
-        return newChild;
-    }
-
-    float ChessTree::getHeuristicValue(const chess::Board &board) const {
-        chess::Color usColor = board.sideToMove();
-        chess::Color themColor = ~board.sideToMove();
-
-        float ourMaterial =
-                ((float)board.pieces(PieceType::PAWN, usColor).count() * 1.f) +
-                ((float)board.pieces(PieceType::KNIGHT, usColor).count() * 3.f) +
-                ((float)board.pieces(PieceType::BISHOP, usColor).count() * 3.f) +
-                ((float)board.pieces(PieceType::ROOK, usColor).count() * 5.f) +
-                ((float)board.pieces(PieceType::QUEEN, usColor).count() * 9.f);
-        float theirMaterial =
-                ((float)board.pieces(PieceType::PAWN, themColor).count() * 1.f) +
-                ((float)board.pieces(PieceType::KNIGHT, themColor).count() * 3.f) +
-                ((float)board.pieces(PieceType::BISHOP, themColor).count() * 3.f) +
-                ((float)board.pieces(PieceType::ROOK, themColor).count() * 5.f) +
-                ((float)board.pieces(PieceType::QUEEN, themColor).count() * 9.f);
-
-        return (ourMaterial / 50.f) + 0.1f - (theirMaterial / 50.f);
-    }
-
-    float ChessTree::mcEvalNode(const ChessTreeNode *node) {
-        chess::Board board = node->getBoard();
-
-        // Play until end of game
-        chess::GameResultReason reason = board.isGameOver().first;
-        chess::GameResult result = board.isGameOver().second;
-        uint32_t depth = 3;
-        while (result == GameResult::NONE && depth > 0) {
-            chess::Movelist moves;
-            chess::movegen::legalmoves(moves, board);
-
-            chess::Move bestMove{};
-            float bestVal = -1.0f;
-            for (uint32_t i = 0; i < moves.size(); i++) {
-                chess::Board newBoard = board;
-                newBoard.makeMove(moves[(int) i]);
-                float thisVal = getHeuristicValue(newBoard);
-                if (thisVal > bestVal) {
-                    bestVal = thisVal;
-                    bestMove = moves[(int) i];
-
-                    if (thisVal == 1.0f) {
-                        break;
-                    }
+            else
+            {
+                if (uct < bestUCT) {
+                    bestUCT = uct;
+                    bestNode = &nodes[i];
                 }
             }
-
-            board.makeMove(bestMove);
-            result = board.isGameOver().second;
-            depth--;
+            
         }
+    }
+    /*float uctToBeat = node->calculateUCT();
+    ChessTreeNode* bestNode = nullptr;
+    for (size_t i = 0; i < head->getChildCount(); i++) {
+        float uct = head->getChild(i)->calculateUCT();
+        if (uct > uctToBeat + 0.1f) {
+            bestNode = head->getChild(i);
+            uctToBeat = uct;
+        }
+    }*/
 
-        // Translate into eval
-        switch (result) {
-            case GameResult::WIN:
-                return 1;
-            case GameResult::LOSE:
-                return -1;
-            case GameResult::DRAW:
-                //printf("%d", reason);
-                return 0;
-            case GameResult::NONE:
-            default:
+    if (bestNode != nullptr)
+        return bestNode;
+    else
+        return node;
+}
+
+bool ChessTree::hasMoves(ChessTreeNode* node)
+{
+    // calculate random move
+    chess::Movelist moves;
+    chess::movegen::legalmoves(moves, node->getBoard());
+
+    return moves.size() > 0;
+}
+
+ChessTreeNode* ChessTree::expandNode(ChessTreeNode* node)
+{
+    // calculate random move
+    chess::Movelist moves;
+    chess::movegen::legalmoves(moves, node->getBoard());
+
+    chess::Move chosenMove = moves[rand() % moves.size()];
+    std::string _ = chess::uci::moveToUci(chosenMove);
+
+    return newNode(node, chosenMove);
+}
+
+float ChessTree::getHeuristicValue(const chess::Board& board) const
+{
+    chess::Color usColor = board.sideToMove();
+    chess::Color themColor = ~board.sideToMove();
+
+    float ourMaterial = ((float)board.pieces(PieceType::PAWN, usColor).count() * 1.f) + ((float)board.pieces(PieceType::KNIGHT, usColor).count() * 3.f) + ((float)board.pieces(PieceType::BISHOP, usColor).count() * 3.f) + ((float)board.pieces(PieceType::ROOK, usColor).count() * 5.f) + ((float)board.pieces(PieceType::QUEEN, usColor).count() * 9.f);
+    float theirMaterial = ((float)board.pieces(PieceType::PAWN, themColor).count() * 1.f) + ((float)board.pieces(PieceType::KNIGHT, themColor).count() * 3.f) + ((float)board.pieces(PieceType::BISHOP, themColor).count() * 3.f) + ((float)board.pieces(PieceType::ROOK, themColor).count() * 5.f) + ((float)board.pieces(PieceType::QUEEN, themColor).count() * 9.f);
+
+    return (ourMaterial / 39.f) - (theirMaterial / 39.f);
+}
+
+float ChessTree::mcEvalNode(const ChessTreeNode* node, std::string& outFen)
+{
+    chess::Board board = node->getBoard();
+
+    // Play until end of game
+    chess::GameResultReason reason = board.isGameOver().first;
+    chess::GameResult result = board.isGameOver().second;
+    uint32_t depth = 50;
+    std::string _;
+    while (result == GameResult::NONE && depth > 0) {
+        chess::Movelist moves;
+        chess::movegen::legalmoves(moves, board);
+
+        chess::Move chosenMove = moves[rand() % moves.size()];
+        _ = chess::uci::moveToUci(chosenMove);
+
+        board.makeMove(chosenMove);
+        _ = board.getFen();
+
+        reason = board.isGameOver().first;
+        result = board.isGameOver().second;
+
+        depth--;
+    }
+
+    outFen = board.getFen();
+
+    // Translate into eval
+    switch (result) {
+    case GameResult::WIN:
+        return 1;
+    case GameResult::LOSE:
+        return -1;
+    case GameResult::DRAW:
+        // printf("%d", reason);
+        return 0;
+    case GameResult::NONE:
+    default:
+        float value = getHeuristicValue(board);
+        return value;
+    }
+}
+
+void ChessTree::backpropagation(ChessTreeNode* node, float eval) const
+{
+    ChessTreeNode* head = node;
+    while (!isRoot(head)) {
+        head->incrementVisits();
+        float flip = head->getBoard().sideToMove() == chess::Color::BLACK ? -1.f : 1.f;
+        head->addValue(eval * flip);
+        head = head->getParent();
+    }
+    head->incrementVisits(); // Increment root as well
+    float flip = head->getBoard().sideToMove() == chess::Color::BLACK ? -1.f : 1.f;
+    head->addValue(eval * flip);
+}
+
+std::string ChessTree::getBestMove() const
+{
+    int bestIndex = -1;
+    float bestUCT = -100000;
+    for (int childIndex = 0; childIndex < root->getChildCount(); childIndex++) {
+        float currentUCT = root->getChild(childIndex)->calculateUCT();
+        if (currentUCT > bestUCT) {
+            bestUCT = currentUCT;
+            bestIndex = childIndex;
+        }
+    }
+
+    return root->getChild(bestIndex)->getMoveUCI();
+}
+
+void ChessTree::debugPrint() const
+{
 #ifdef INCLUDE_PRINTS
-    printf("%d", reason);
+    root->debugPrint(0);
 #endif
-                return getHeuristicValue(board);
-        }
-    }
-
-    void ChessTree::backpropagation(ChessTreeNode *node, float eval) const {
-        ChessTreeNode *head = node;
-        while (!isRoot(head)) {
-            head->incrementVisits();
-            head->addValue(eval);
-            head = head->getParent();
-        }
-        head->incrementVisits(); // Increment root as well
-        head->addValue(eval);
-    }
-
-    std::string ChessTree::getBestMove() const {
-        int bestIndex = -1;
-        float bestUCT = -100000;
-        for (int childIndex = 0; childIndex < root->getChildCount(); childIndex++) {
-            float currentUCT = root->getChild(childIndex)->calculateUCT();
-            if (currentUCT > bestUCT) {
-                bestUCT = currentUCT;
-                bestIndex = childIndex;
-            }
-        }
-
-        return root->getChild(bestIndex)->getMoveUCI();
-    }
-
-    void ChessTree::debugPrint() const
-    {
-#ifdef INCLUDE_PRINTS
-        root->debugPrint(0);
-#endif
-    }
+}
 }
