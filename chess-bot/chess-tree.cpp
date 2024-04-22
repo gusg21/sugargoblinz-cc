@@ -69,14 +69,15 @@ ChessTreeNode* ChessTree::createRoot(Board board)
                     bestNode = &nodes[i];
                 }
             }
-            else
-            {
+            else {
                 if (uct < bestUCT) {
                     bestUCT = uct;
                     bestNode = &nodes[i];
                 }
             }
-            
+        }
+        else {
+            break;
         }
     }
     /*float uctToBeat = node->calculateUCT();
@@ -118,8 +119,8 @@ ChessTreeNode* ChessTree::expandNode(ChessTreeNode* node)
 
 float ChessTree::getHeuristicValue(const chess::Board& board) const
 {
-    chess::Color usColor = board.sideToMove();
-    chess::Color themColor = ~board.sideToMove();
+    chess::Color usColor = ~board.sideToMove();
+    chess::Color themColor = board.sideToMove();
 
     float ourMaterial = ((float)board.pieces(PieceType::PAWN, usColor).count() * 1.f) + ((float)board.pieces(PieceType::KNIGHT, usColor).count() * 3.f) + ((float)board.pieces(PieceType::BISHOP, usColor).count() * 3.f) + ((float)board.pieces(PieceType::ROOK, usColor).count() * 5.f) + ((float)board.pieces(PieceType::QUEEN, usColor).count() * 9.f);
     float theirMaterial = ((float)board.pieces(PieceType::PAWN, themColor).count() * 1.f) + ((float)board.pieces(PieceType::KNIGHT, themColor).count() * 3.f) + ((float)board.pieces(PieceType::BISHOP, themColor).count() * 3.f) + ((float)board.pieces(PieceType::ROOK, themColor).count() * 5.f) + ((float)board.pieces(PieceType::QUEEN, themColor).count() * 9.f);
@@ -134,7 +135,7 @@ float ChessTree::mcEvalNode(const ChessTreeNode* node, std::string& outFen)
     // Play until end of game
     chess::GameResultReason reason = board.isGameOver().first;
     chess::GameResult result = board.isGameOver().second;
-    uint32_t depth = 50;
+    uint32_t depth = 25;
     std::string _;
     while (result == GameResult::NONE && depth > 0) {
         chess::Movelist moves;
@@ -157,31 +158,29 @@ float ChessTree::mcEvalNode(const ChessTreeNode* node, std::string& outFen)
     // Translate into eval
     switch (result) {
     case GameResult::WIN:
-        return 1;
-    case GameResult::LOSE:
         return -1;
+    case GameResult::LOSE:
+        return 1;
     case GameResult::DRAW:
         // printf("%d", reason);
         return 0;
     case GameResult::NONE:
     default:
-        float value = getHeuristicValue(board);
+        float value = -getHeuristicValue(board);
         return value;
     }
 }
 
-void ChessTree::backpropagation(ChessTreeNode* node, float eval) const
+void ChessTree::backpropagation(ChessTreeNode* node, float eval, chess::Color rootColor) const
 {
     ChessTreeNode* head = node;
     while (!isRoot(head)) {
         head->incrementVisits();
-        float flip = head->getBoard().sideToMove() == chess::Color::BLACK ? -1.f : 1.f;
-        head->addValue(eval * flip);
+        //float flip = head->getBoard().sideToMove() == rootColor ? -1.f : 1.f;
+        head->addValue(eval);
         head = head->getParent();
     }
     head->incrementVisits(); // Increment root as well
-    float flip = head->getBoard().sideToMove() == chess::Color::BLACK ? -1.f : 1.f;
-    head->addValue(eval * flip);
 }
 
 std::string ChessTree::getBestMove() const

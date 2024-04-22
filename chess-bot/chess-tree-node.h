@@ -94,12 +94,17 @@ namespace chess {
          */
         [[nodiscard]] float calculateUCT() const {
             float ourVisits = static_cast<float>(getVisits());
-            float valueRatio = static_cast<float>(getValue()) / ourVisits;
+            float valueRatio = 0.f;
+            if (ourVisits != 0.f)
+                valueRatio = static_cast<float>(getValue()) / ourVisits;
             float parentVisits = 0;
             if (getParent() != nullptr)
                 parentVisits = static_cast<float>(getParent()->getVisits());
-            float krabbyPattyFormula = sqrtf(2.0f) / 3.0f;
-            return valueRatio + krabbyPattyFormula * (logf(parentVisits) / ourVisits);
+            float krabbyPattyFormula = sqrtf(1.0f);
+            float exploration = 1.f;
+            if (ourVisits != 0.f)
+                exploration = (logf(parentVisits) / ourVisits);
+            return valueRatio + krabbyPattyFormula * exploration;
         }
 
         /**

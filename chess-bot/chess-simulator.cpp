@@ -11,18 +11,19 @@ std::string ChessSimulator::Move(const std::string& fen) {
     printf("[[ New Move ]]\n");
 #endif
     chess::Board board(fen);
-    std::srand(time(nullptr));
+    chess::Color rootColor = board.sideToMove();
+    srand(time(nullptr));
 
-    chess::ChessTree* g_ChessTree = new chess::ChessTree();
+    auto* g_ChessTree = new chess::ChessTree();
     g_ChessTree->createRoot(board);
 
     // TODO: do number of iterations
-    for (uint32_t i = 0; i < 1000; i++) {
+    for (uint32_t i = 0; i < 500; i++) {
         chess::ChessTreeNode* selected = g_ChessTree->selectNode(g_ChessTree->getRoot());
-        if (g_ChessTree->hasMoves(selected)) {
+        if (chess::ChessTree::hasMoves(selected)) {
             chess::ChessTreeNode* newNode = g_ChessTree->expandNode(selected);
             float mcEval = g_ChessTree->mcEvalNode(newNode);
-            g_ChessTree->backpropagation(newNode, mcEval);
+            g_ChessTree->backpropagation(newNode, mcEval, rootColor);
         }
         g_ChessTree->debugPrint();
     }

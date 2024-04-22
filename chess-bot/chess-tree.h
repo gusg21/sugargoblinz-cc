@@ -75,7 +75,7 @@ namespace chess {
          * @param node
          * @param uct
          */
-        void backpropagation(ChessTreeNode* node, float eval) const;
+        void backpropagation(ChessTreeNode* node, float eval, chess::Color rootColor) const;
 
         /**
          * Get the best move under the root
