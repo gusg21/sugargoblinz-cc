@@ -19,7 +19,7 @@ std::string ChessSimulator::Move(const std::string& fen) {
     g_ChessTree->createRoot(board);
 
     // TODO: do number of iterations
-    for (uint32_t i = 0; i < 500; i++) {
+    for (uint32_t i = 0; i < 5000; i++) {
         chess::ChessTreeNode* selected = g_ChessTree->selectNode(g_ChessTree->getRoot());
         if (chess::ChessTree::hasMoves(selected)) {
             chess::ChessTreeNode* newNode = g_ChessTree->expandNode(selected);

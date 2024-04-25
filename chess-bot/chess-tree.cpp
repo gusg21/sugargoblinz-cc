@@ -148,7 +148,7 @@ float ChessTree::mcEvalNode(const ChessTreeNode* node, std::string& outFen)
     // Play until end of game
     chess::GameResultReason reason = board.isGameOver().first;
     chess::GameResult result = board.isGameOver().second;
-    uint32_t depth = 25;
+    uint32_t depth = 50;
     std::string _;
     while (result == GameResult::NONE && depth > 0) {
         chess::Movelist moves;
@@ -157,7 +157,18 @@ float ChessTree::mcEvalNode(const ChessTreeNode* node, std::string& outFen)
         chess::Move chosenMove {};
         float bestEval = -INFINITY;
         for (int i = 0; i < moves.size(); i++) {
-            
+            float thisEval = getMoveHeuristicValue(board, moves[(int)i]);
+            if (thisEval > bestEval)
+            {
+                bestEval = thisEval;
+                chosenMove = moves[(int)i];
+
+                if (thisEval == 1.0f)
+                {
+                    break;
+                }
+            }
+
         }
         _ = chess::uci::moveToUci(chosenMove);
 
