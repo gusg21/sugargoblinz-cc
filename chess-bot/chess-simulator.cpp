@@ -1,5 +1,6 @@
 #include "chess-simulator.h"
 #include "chess-simulator.h"
+#include "chess-simulator.h"
 #include "chess.hpp"
 #include <random>
 
@@ -52,4 +53,9 @@ std::pair<float, std::string> ChessSimulator::GetEval(const std::string& _fen)
     return {
         eval, fen
     };
+}
+
+float ChessSimulator::GetHeuristic(const chess::Board& board)
+{
+    return chess::ChessTree::getHeuristicValue(board);
 }

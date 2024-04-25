@@ -117,15 +117,28 @@ ChessTreeNode* ChessTree::expandNode(ChessTreeNode* node)
     return newNode(node, chosenMove);
 }
 
-float ChessTree::getHeuristicValue(const chess::Board& board) const
+float ChessTree::getHeuristicValue(const chess::Board& board)
 {
-    chess::Color usColor = ~board.sideToMove();
-    chess::Color themColor = board.sideToMove();
+    chess::Color usColor = chess::Color::WHITE;
+    chess::Color themColor = chess::Color::BLACK;
 
-    float ourMaterial = ((float)board.pieces(PieceType::PAWN, usColor).count() * 1.f) + ((float)board.pieces(PieceType::KNIGHT, usColor).count() * 3.f) + ((float)board.pieces(PieceType::BISHOP, usColor).count() * 3.f) + ((float)board.pieces(PieceType::ROOK, usColor).count() * 5.f) + ((float)board.pieces(PieceType::QUEEN, usColor).count() * 9.f);
-    float theirMaterial = ((float)board.pieces(PieceType::PAWN, themColor).count() * 1.f) + ((float)board.pieces(PieceType::KNIGHT, themColor).count() * 3.f) + ((float)board.pieces(PieceType::BISHOP, themColor).count() * 3.f) + ((float)board.pieces(PieceType::ROOK, themColor).count() * 5.f) + ((float)board.pieces(PieceType::QUEEN, themColor).count() * 9.f);
+    float ourMaterial = ((float)board.pieces(PieceType::PAWN, usColor).count() * 5.f) + 
+        ((float)board.pieces(PieceType::KNIGHT, usColor).count() * 6.f) + 
+        ((float)board.pieces(PieceType::BISHOP, usColor).count() * 7.f) + 
+        ((float)board.pieces(PieceType::ROOK, usColor).count() * 8.f) + 
+        ((float)board.pieces(PieceType::QUEEN, usColor).count() * 9.f);
+    float theirMaterial = ((float)board.pieces(PieceType::PAWN, themColor).count() * 5.f) + 
+        ((float)board.pieces(PieceType::KNIGHT, themColor).count() * 6.f) + 
+        ((float)board.pieces(PieceType::BISHOP, themColor).count() * 7.f) + 
+        ((float)board.pieces(PieceType::ROOK, themColor).count() * 8.f) + 
+        ((float)board.pieces(PieceType::QUEEN, themColor).count() * 9.f);
 
-    return (ourMaterial / 39.f) - (theirMaterial / 39.f);
+    return ourMaterial / 91.f - theirMaterial / 91.f;
+}
+
+float ChessTree::getMoveHeuristicValue(const chess::Board& board, const chess::Move& move) {
+    float sideVal = board.sideToMove() == chess::Color::WHITE ? 1.f : -1.f;
+    return (board.isCapture(move) ? 1.f : 0.f) * sideVal;
 }
 
 float ChessTree::mcEvalNode(const ChessTreeNode* node, std::string& outFen)
@@ -141,7 +154,11 @@ float ChessTree::mcEvalNode(const ChessTreeNode* node, std::string& outFen)
         chess::Movelist moves;
         chess::movegen::legalmoves(moves, board);
 
-        chess::Move chosenMove = moves[rand() % moves.size()];
+        chess::Move chosenMove {};
+        float bestEval = -INFINITY;
+        for (int i = 0; i < moves.size(); i++) {
+            
+        }
         _ = chess::uci::moveToUci(chosenMove);
 
         board.makeMove(chosenMove);
@@ -166,7 +183,7 @@ float ChessTree::mcEvalNode(const ChessTreeNode* node, std::string& outFen)
         return 0;
     case GameResult::NONE:
     default:
-        float value = -getHeuristicValue(board);
+        float value = getHeuristicValue(board);
         return value;
     }
 }

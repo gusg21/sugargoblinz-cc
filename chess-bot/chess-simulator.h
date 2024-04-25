@@ -18,4 +18,6 @@ namespace ChessSimulator {
 
     std::pair<float, std::string> GetEval(const std::string& fen);
 
+    float GetHeuristic(const chess::Board& board);
+
 } // namespace ChessSimulator

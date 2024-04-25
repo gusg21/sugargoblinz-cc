@@ -85,7 +85,8 @@ namespace chess {
 
         static bool hasMoves(ChessTreeNode *node);
 
-        float getHeuristicValue(const Board &board) const;
+        static float getHeuristicValue(const Board& board);
+        static float getMoveHeuristicValue(const Board& board, const Move& move);
 
         void debugPrint() const;
     };

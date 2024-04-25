@@ -168,6 +168,7 @@ int main(int argc, char *argv[]) {
   char* boardFenInput = new char[512];
   memset(boardFenInput, 0, 512);
   float eval = INFINITY;
+  float heur = INFINITY;
 
   SDL_RendererInfo info;
   SDL_GetRendererInfo(renderer, &info);
@@ -254,6 +255,11 @@ int main(int argc, char *argv[]) {
         eval = pair.first;
         fen = pair.second;
         board.setFen(fen);
+    }
+
+    ImGui::Text("Heuristic Val: %.2f", heur);
+    if (ImGui::Button("Calc Heuristic Eval")) {
+        heur = ChessSimulator::GetHeuristic(board);
     }
 
     ImGui::Separator();

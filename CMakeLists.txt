@@ -133,7 +133,7 @@ add_library(chessbot STATIC ${CHESS_BOT_FILES}
         chess-bot/chess-tree-node.cpp
         chess-bot/chess-tree.cpp
         chess-bot/chess-tree.h)
-target_compile_definitions(chessbot PRIVATE -DINCLUDE_PRINTS)
+# target_compile_definitions(chessbot PRIVATE -DINCLUDE_PRINTS)
 set_target_properties(chessbot PROPERTIES LINKER_LANGUAGE CXX)
 include_directories(chess-bot)
 
